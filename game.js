@@ -251,6 +251,7 @@
   // ---------- Renderização ----------
   function resize() {
     const size = canvas.clientWidth;
+    if (!size) return;               // canvas ainda não medido — mantém cell anterior
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(size * dpr);
     canvas.height = Math.round(size * dpr);
@@ -282,26 +283,31 @@
       }
     }
 
-    // comida (com pulso de nascimento)
-    const age = Math.min((now - (food.born || 0)) / 250, 1);
-    const pulse = 1 + 0.12 * Math.sin(now / 260) * easeOut(age);
-    const fr = cell * 0.34 * pulse * easeOut(age);
-    const fx = (food.x + 0.5) * cell;
-    const fy = (food.y + 0.5) * cell;
-    ctx.save();
-    ctx.shadowColor = "#f87171";
-    ctx.shadowBlur = 16;
-    const g = ctx.createRadialGradient(fx, fy, fr * 0.2, fx, fy, fr);
-    g.addColorStop(0, "#fecaca");
-    g.addColorStop(1, "#ef4444");
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(fx, fy, fr, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    // comida (com pulso de nascimento) — raio sempre >= 0 e centro finito,
+    // para nunca lançar IndexSizeError em createRadialGradient/arc
+    if (Number.isFinite(cell) && cell > 0 && food) {
+      const age = Math.max(0, Math.min((now - (food.born || 0)) / 250, 1));
+      const pulse = 1 + 0.12 * Math.sin(now / 260) * easeOut(age);
+      const fr = Math.max(0.01, cell * 0.34 * pulse * easeOut(age));
+      const fx = (food.x + 0.5) * cell;
+      const fy = (food.y + 0.5) * cell;
+      ctx.save();
+      ctx.shadowColor = "#f87171";
+      ctx.shadowBlur = 16;
+      const g = ctx.createRadialGradient(fx, fy, fr * 0.2, fx, fy, fr);
+      g.addColorStop(0, "#fecaca");
+      g.addColorStop(1, "#ef4444");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
-    // cobra — interpolação entre ticks para movimento suave
-    const t = state === "playing" ? Math.min((now - lastTick) / speedMs, 1) : 1;
+    // cobra — interpolação entre ticks para movimento suave (clampado em [0,1])
+    const t = state === "playing"
+      ? Math.max(0, Math.min((now - lastTick) / speedMs, 1))
+      : 1;
     const dead = state === "over";
     const len = snake.length;
 
@@ -356,22 +362,39 @@
 
   // ---------- Loop principal ----------
   function loop(now) {
-    if (state === "playing") {
-      while (now - lastTick >= speedMs) {
-        lastTick += speedMs;
-        step(now);
-        if (state !== "playing") break;
+    try {
+      if (state === "playing") {
+        // limita passos por quadro para não travar a aba após ficar em segundo plano
+        let guard = 5;
+        while (now - lastTick >= speedMs && guard > 0) {
+          lastTick += speedMs;
+          guard--;
+          step(now);
+          if (state !== "playing") break;
+        }
+        if (guard <= 0 && now - lastTick >= speedMs) lastTick = now;
       }
+      draw(now);
+    } catch (err) {
+      console.error("Erro no loop do jogo:", err); // nunca deixa o rAF morrer
     }
-    draw(now);
     requestAnimationFrame(loop);
   }
 
   // ---------- Inicialização ----------
-  highscore = loadHighscore();
-  highEl.textContent = highscore;
-  setSpeed(parseInt(localStorage.getItem(SPEED_KEY) || "95", 10) || 95, false);
-  resize();
-  resetGame(false);
-  requestAnimationFrame(loop);
+  function init() {
+    highscore = loadHighscore();
+    highEl.textContent = highscore;
+    setSpeed(parseInt(localStorage.getItem(SPEED_KEY) || "95", 10) || 95, false);
+    cell = canvas.clientWidth / GRID; // valor inicial mesmo antes do layout final
+    resize();
+    resetGame(false);
+    requestAnimationFrame(loop);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
