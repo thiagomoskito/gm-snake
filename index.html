@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b1120" />
+  <title>Cobrinha Neon — Snake Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="hud">
+      <div class="scores">
+        <div class="score-card">
+          <span class="label">Pontos</span>
+          <span id="score" class="value">0</span>
+        </div>
+        <div class="score-card record">
+          <span class="label">Recorde</span>
+          <span id="highscore" class="value">0</span>
+        </div>
+      </div>
+      <h1 class="title">🐍 Cobrinha <span class="accent">Neon</span></h1>
+      <div class="controls-top">
+        <button id="btn-pause" class="icon-btn" title="Pausar (Espaço)" aria-label="Pausar">⏸</button>
+        <button id="btn-restart" class="icon-btn" title="Reiniciar (R)" aria-label="Reiniciar">↻</button>
+      </div>
+    </header>
+
+    <section class="difficulty" role="radiogroup" aria-label="Dificuldade">
+      <button class="diff-btn" data-speed="140">Fácil</button>
+      <button class="diff-btn active" data-speed="95">Médio</button>
+      <button class="diff-btn" data-speed="60">Difícil</button>
+      <button class="diff-btn" data-speed="38">Insano</button>
+    </section>
+
+    <section class="board-wrap">
+      <canvas id="board" width="480" height="480" aria-label="Tabuleiro do jogo"></canvas>
+
+      <div id="overlay" class="overlay">
+        <div class="overlay-card">
+          <h2 id="overlay-title">Pronto para jogar?</h2>
+          <p id="overlay-msg">Use as setas / WASD no teclado ou deslize o dedo no tabuleiro.</p>
+          <p id="overlay-score" class="overlay-score hidden"></p>
+          <button id="btn-start" class="primary-btn">▶ Jogar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="touch-controls" aria-label="Controles de toque">
+      <div></div>
+      <button class="tbtn" data-dir="up" aria-label="Cima">▲</button>
+      <div class="trow">
+        <button class="tbtn" data-dir="left" aria-label="Esquerda">◀</button>
+        <button class="tbtn" data-dir="down" aria-label="Baixo">▼</button>
+        <button class="tbtn" data-dir="right" aria-label="Direita">▶</button>
+      </div>
+    </section>
+
+    <footer class="hints">
+      <span><kbd>←↑↓→</kbd>/<kbd>WASD</kbd> mover</span>
+      <span><kbd>Espaço</kbd> pausar</span>
+      <span><kbd>R</kbd> reiniciar</span>
+      <span>📱 deslize para mover</span>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
